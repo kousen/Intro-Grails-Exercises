@@ -49,6 +49,7 @@ The Quest for the Holy Grails
     e. Generate a `toString` method in `Task` using the AST Transformation:
     
         import groovy.transform.ToString
+        @ToString
         class Task {
             // ...
         }
