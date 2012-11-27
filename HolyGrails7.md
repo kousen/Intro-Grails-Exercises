@@ -1,120 +1,64 @@
 The Quest for the Holy Grails
 -----------------------------
 
-1. *Google Geocoder Docs*
+1. *The Google Visualization Plugin*
 
-    a. The Google Geocoder documentation is at [https://developers.google.com/maps/documentation/geocoding/]('https://developers.google.com/maps/documentation/geocoding/').
-It's probably worth a bookmark.
+    a. Check out the plugin documentation at [http://grails.org/plugin/google-visualization]('http://grails.org/plugin/google-visualization').
+    This plugin shows how to use Google visualizations in your applications without writing any JavaScript.
+    
+    b. Open the file `BuildConfig.groovy` in the `grails-app/conf` folder. In the `plugins` section, add:
+    
+        compile ':google-visualization:0.6'
+        
+    c. Open the `GeocoderService` class. Add a method to return the required headers
+    
+        def headers() {
+            [['number','Lat'], ['number','Lng'], ['string','Name']]
+        }
+        
+    d. Add a method to return the latitude / longitude / name triples for each castle
+    
+        def data() {
+            Castle.list().collect { c ->
+                [c.latitude, c.longitude, c.toString()]
+            }
+        }
+        
+2. *Using the service in a controller*
 
-2. *Creating a Service*
+    a. The `list` action in `CastleController` already returns a list of castles and the total. Add the headers and data to the 
+    returned map
+    
+        def list() {
+            // ...
+            [castleInstanceList: Castle.list(), castleInstanceTotal: Castle.count(),
+             mapColumns: geocoderService.headers(), mapData: geocoderService.data()]
+        }
+        
+3. *Updating the view*
 
-    a. Create the geocoder service
+    a. Open the `list.gsp` file in the `grails-app\views\castle` folder. Add the required library tag to the header.
     
-        grails create-service nfjs.Geocoder
+        <head>
+            ...
+            <gvisualization:apiImport />
+        </head>
         
-    b. Add a public, static, final attribute representing the base URL for the geocoder to the `GeocoderService` class. Be
-    sure to include the trailing question mark.
+    b. Somewhere in the body, add the map tag from the plugin
     
-        class GeocoderService {
-            public static final String BASE = 'http://maps.googleapis.com/maps/api/geocode/xml?'
-        }
+        <gvisualization:map elementId="map" columns="${mapColumns}" data="${mapData}" />
         
-    c. Add a method to fill in the latitude and longitude values for a `Castle`.
+    c. Below that tag, add a div to hold the map
     
-        void fillInLatLng(Castle c) {
-            
-        }
-    
-    d. Create an encoded address using a list and the collect and join methods.
-    
-        void fillInLatLng(Castle c) {
-            String encoded = [c.city, c.state].collect {
-                URLEncoder.encode(it, 'UTF-8')
-            }.join(',+')
-        }
+        <div id="map" style="width: 100%;"></div>
         
-    e. Build a query string using a map and the encoded address
+    d. Restart the server and browse to the castle list page. The map should now appear.
     
-        void fillInLatLng(Castle c) {
-            // from above...
-            String qs = [address:encoded, sensor:false].collect { k,v -> "$k=$v" }.join('&')
-        }
+    e. To see the castle names when you mouse over them, add the `showTip` property to the map tag
+    
+        <gvisualization:map ... showTip="${true}" />
         
-    f. Transmit the URL to Google and parse the response XML.
-    
-        // from above...
-        def root = new XmlSlurper().parse(BASE + qs)
-        
-    g. Update the latitude and longitude of the castle by walking the tree
-    
-        // from above...
-        c.latitude = root.result[0].geometry.location.lat.toDouble()
-        c.longitude = root.result[0].geometry.location.lng.toDouble()
-    
-3. *Test the Geocoder service*
+4. *Congratulations! The app is complete!*
 
-    a. Open the `GeocoderServiceTests` class and add a method to test for Google headquarters. Note that because of the
-    `@TestFor` annotation, you don't need to instantiate the service.
-    
-        void testMountainViewCA() {
-            Castle google = new Castle(city:'Mountain View', state:'CA')
-            service.fillInLatLng(google)
-            assertEquals(  37.4, google.latitude, 0.1)
-            assertEquals(-122.1, google.longitude, 0.1)
-        }
-        
-    b. Run the unit tests until the service test passes.
-    
-4. *Injecting a service*
-
-    a. Inject the service into the castle controller by adding an attribute to the top of the class:
-    
-        class CastleController {
-            def geocoderService
-            // ...
-        }
-        
-    b. In the `save` action, just before the actual call to `save()`, update the castle
-    
-        def save() {
-            def castleInstance = new Castle(params)
-            geocoderService.fillInLatLng(castleInstance)
-            // ...
-        }
-        
-    c. Do the same in the `update` action
-    
-        def update() {
-            // ...
-            castleInstance.properties = params
-            geocoderService.fillInLatLng(castleInstance)
-            // ...
-        }
-        
-    d. Inject the service into `BootStrap.groovy` as well
-    
-        class BootStrap {
-            def geocoderService
-            // ...
-        }
-        
-    e. Use the service to update the castles in the bootstrap before saving them
-    
-        def init = { servletContext ->
-            // ...
-            Castle camelot = ...
-                .addToKnights(...)
-            geocoderService.fillInLatLng(camelot)
-            camelot.save()
-        }
-        
-    f. Do the same for Swamp castle in the bootstrap
-    
-5. *Use the service in the application*
-
-    a. Restart the application and browse to the list of castles (access the castle controller)
-    
-    b. Add other castles, using any city and state you wish. Note that the state is interpreted broadly -- you can use country codes,
-    country names, or anything else that Google understands.
-    
-    
+    Other potential additions include producing JSON and/or XML representations of the domain classes, using the Grails Ajax tags,
+    working with other plugins like Quartz, Searchable, or Spring Security, and much more...

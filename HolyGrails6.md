@@ -1,144 +1,120 @@
 The Quest for the Holy Grails
 -----------------------------
 
-1. *Knights*
+1. *Google Geocoder Docs*
 
-    a. Add a `Knight` domain class
+    a. The Google Geocoder documentation is at [https://developers.google.com/maps/documentation/geocoding/]('https://developers.google.com/maps/documentation/geocoding/').
+It's probably worth a bookmark.
+
+2. *Creating a Service*
+
+    a. Create the geocoder service
     
-        grails create-domain-class nfjs.Knight
+        grails create-service nfjs.Geocoder
         
-    b. Knights have titles and names
+    b. Add a public, static, final attribute representing the base URL for the geocoder to the `GeocoderService` class. Be
+    sure to include the trailing question mark.
     
-        class Knight {
-            String title
-            String name
+        class GeocoderService {
+            public static final String BASE = 'http://maps.googleapis.com/maps/api/geocode/xml?'
         }
         
-    c. Add appropriate constraints
+    c. Add a method to fill in the latitude and longitude values for a `Castle`.
     
-        static constraints = {
-            title inList: ['Sir', 'Lord', 'King', 'Squire']
-            name blank: false
+        void fillInLatLng(Castle c) {
+            
+        }
+    
+    d. Create an encoded address using a list and the collect and join methods.
+    
+        void fillInLatLng(Castle c) {
+            String encoded = [c.city, c.state].collect {
+                URLEncoder.encode(it, 'UTF-8')
+            }.join(',+')
         }
         
-    d. Quests have many knights, too
+    e. Build a query string using a map and the encoded address
     
-        class Quest {
+        void fillInLatLng(Castle c) {
+            // from above...
+            String qs = [address:encoded, sensor:false].collect { k,v -> "$k=$v" }.join('&')
+        }
+        
+    f. Transmit the URL to Google and parse the response XML.
+    
+        // from above...
+        def root = new XmlSlurper().parse(BASE + qs)
+        
+    g. Update the latitude and longitude of the castle by walking the tree
+    
+        // from above...
+        c.latitude = root.result[0].geometry.location.lat.toDouble()
+        c.longitude = root.result[0].geometry.location.lng.toDouble()
+    
+3. *Test the Geocoder service*
+
+    a. Open the `GeocoderServiceTests` class and add a method to test for Google headquarters. Note that because of the
+    `@TestFor` annotation, you don't need to instantiate the service.
+    
+        void testMountainViewCA() {
+            Castle google = new Castle(city:'Mountain View', state:'CA')
+            service.fillInLatLng(google)
+            assertEquals(  37.4, google.latitude, 0.1)
+            assertEquals(-122.1, google.longitude, 0.1)
+        }
+        
+    b. Run the unit tests until the service test passes.
+    
+4. *Injecting a service*
+
+    a. Inject the service into the castle controller by adding an attribute to the top of the class:
+    
+        class CastleController {
+            def geocoderService
             // ...
-            static hasMany = [tasks:Task, knights:Knight]
         }
         
-    e. Knights know which quest they are on
-        
-        class Knight {
-            Quest quest
+    b. In the `save` action, just before the actual call to `save()`, update the castle
+    
+        def save() {
+            def castleInstance = new Castle(params)
+            geocoderService.fillInLatLng(castleInstance)
+            // ...
         }
         
-    f. Knights can be between quests
+    c. Do the same in the `update` action
     
-        static constraints = {
-            // as above, and
-            quest nullable: true
+        def update() {
+            // ...
+            castleInstance.properties = params
+            geocoderService.fillInLatLng(castleInstance)
+            // ...
         }
         
-    g. Add a `toString` method
+    d. Inject the service into `BootStrap.groovy` as well
     
-        String toString() { "$title $name" }
-        
-    h. Create a scaffolded controller for `Knight`
-    
-        grails create-scaffold-controller nfjs.Knight
-        
-    If you're using an IDE, you can just create the controller and replace the `index` action with
-    the `static scaffold = true` command, as usual.
-        
-2. *Castles*
-
-    a. Add a `Castle` domain class
-    
-        grails create-domain-class nfjs.Castle
-        
-    b. Castles are really just named locations
-    
-        class Castle {
-            String name
-            String city
-            String state
-            double latitude
-            double longitude
+        class BootStrap {
+            def geocoderService
+            // ...
         }
         
-    c. Add appropriate constraints
-    
-        static constraints = {
-            name blank:false
-            city blank:false
-            state blank:false
-            latitude min:-90d, max:90d  // South Pole to North Pole
-            longitude()
-        }
-        
-    d. Castles need a `toString` method, too
-    
-        String toString() { "$name Castle" }
-        
-    e. Castles contain knights
-    
-        static hasMany = [knights:Knight]
-        
-    f. Knights know which castle they are associated with
-    
-        class Knight {
-            // as before
-            Castle castle
-        }
-        
-    g. But Knights can be between castles, too
-    
-        static constraints = {
-            // other Knight constraints
-            castle nullable: true
-        }
-        
-    h. Add a some castles and knights to the bootstrap data
+    e. Use the service to update the castles in the bootstrap before saving them
     
         def init = { servletContext ->
-            // existing quest and tasks
-            Castle camelot = new Castle(name:'Camelot', city:'Fort Lauderdale', state:'FL')
-                .addToKnights(title:'King', name:'Arthur', quest:q)
-                .addToKnights(title:'Sir', name:'Lancelot', quest:q)
-                .addToKnights(title:'Sir', name:'Robin', quest:q)
-                .save(failOnError:true)
+            // ...
+            Castle camelot = ...
+                .addToKnights(...)
+            geocoderService.fillInLatLng(camelot)
+            camelot.save()
         }
         
-    i. Add another castle near by (will be useful later)
+    f. Do the same for Swamp castle in the bootstrap
     
-        def init = { servletContext -> 
-            // others as above
-            Castle swamp = new Castle(name:'Swamp', city:'Hollywood', state:'FL')
-                .save(failOnError:true)
-        }
-        
-3. *Generate a Castle controller*
+5. *Use the service in the application*
 
-    a. This time, instead of creating a controller, generate it. In fact, generate both the controller and the views.
+    a. Restart the application and browse to the list of castles (access the castle controller)
     
-        grails generate-all nfjs.Castle
-        
-    This will provide the complete `CastleController` code, as well as all the GSP files in the `grails-app\views\castle` folder.
-        
-4. *Look at generated schema*
-
-    a. Run the `schema-export` command
+    b. Add other castles, using any city and state you wish. Note that the state is interpreted broadly -- you can use country codes,
+    country names, or anything else that Google understands.
     
-        grails schema-export
-        
-    Check out the `ddl.sql` file in the target directory
-    
-    b. Start the server
-    
-        grails run-app
-        
-    c. Check out the db console at http://localhost:8080/holygrails/dbconsole.
-    Be sure to use the same settings as those in the `DataSource.groovy` file.
     
