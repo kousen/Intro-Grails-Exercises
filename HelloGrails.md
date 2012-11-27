@@ -53,12 +53,12 @@ Exercises
         
 5. *Return*
 
-    a. Add a new action called `greet` to the `WelcomeController` class. As before, retrieve a `name` parameter from the request and save it to a variable called `n`, using a default if the parameter is null or empty.
+    a. Add a new action called `greet` to the `WelcomeController` class. This time, add a `String` parameter called `name` to the method. Grails will automatically supply it from the request if it exists, and use `null` if not. As before, save it to a variable called `n`, using a default if the parameter is null or empty.
     
     b. This time, have the action return a map with one entry. The key in the entry should be `name` and the value is the `n` variable. Remember, the `return` keyword itself is optional. The complete implementation is shown below.
     
-        def greet() {
-            String n = params.name ?: 'World'
+        def greet(String name) {
+            String n = name ?: 'World'
             [name:n]
         }
         
@@ -99,8 +99,10 @@ Exercises
     
     d. Add two tests for the `greet` action, again with and without a `name` parameter. This time, when you invoke the `controller.greet()` method, save the result in a variable of type `def` called `model`. In each test, assert that the `model.name` value is the proper string.
     
-        params.name = 'Dolly'
         def model = controller.greet()
-        assert 'Dolly' == model.name
+        assert 'World' == model.name
+        // and 
+        def model = controller.greet('Dolly')
+        assert 'Dolly' == model.name 
     
     e. Execute the `grails test-app unit:` (note the colon after the word `unit`) task and check the resulting output to make sure everything works.
