@@ -12,7 +12,7 @@ The Quest for the Holy Grails
     b. Try out counters and others
     
         Task.count()
-        Task.listOrderBy('name')
+        Task.listOrderByName()
         
 2. *Criteria Queries*
 

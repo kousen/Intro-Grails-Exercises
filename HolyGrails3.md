@@ -92,7 +92,7 @@ The Quest for the Holy Grails
         void testEndDateBeforeStartDate() {
             t.endDate = t.startDate - 1
             assert !t.validate()
-            assert 'validator' == task.errors.endDate
+            assert 'validator' == t.errors.endDate
         }
         
     i. In each case, run the unit tests and correct any errors
