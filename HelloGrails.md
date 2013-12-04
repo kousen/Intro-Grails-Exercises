@@ -35,13 +35,16 @@ Exercises
 
 4. *Redirect*
 
-    a. Add a new action to the `WelcomeController` called `hello`, which takes no arguments and returns `def`. What is the URL corresponding to this action?
+    a. Add a new action to the `WelcomeController` called `greet`, which takes a single `String` argument called `name` and returns `def`. What is the URL corresponding to this action?
     
-    b. Take the implementation of the `index` action and move it to the `hello` action.
+    b. Implement the `greet` action to use the `name` argument (note: only slight variation on current `index` implementation):
     
-    c. In the `index` action, redirect to the `hello` action (note the parentheses below are optional).
+        String n = name ?: 'World'
+        render "<h2>Hello, $n!</h2>"
     
-        redirect(action:'hello')
+    c. In the `index` action, redirect to the `greet` action (note the parentheses below are optional).
+    
+        redirect(action:'greet')
         
     d. Access the URL corresponding to the `index` action, _without_ supplying a `name` parameter. Verify that you see the string 'Hello, World!' in the display.
     
@@ -49,24 +52,24 @@ Exercises
     
     f. Add a second argument to the `redirect` method to pass the input parameters to the next request and try again. The supplied name should now show in the response.
     
-        redirect(action:'hello', params:params)
+        redirect(action:'greet', params:params)
         
 5. *Return*
 
-    a. Add a new action called `greet` to the `WelcomeController` class. This time, add a `String` parameter called `name` to the method. Grails will automatically supply it from the request if it exists, and use `null` if not. As before, save it to a variable called `n`, using a default if the parameter is null or empty.
+    a. Add a new action called `hi` to the `WelcomeController` class, with no arguments.
     
-    b. This time, have the action return a map with one entry. The key in the entry should be `name` and the value is the `n` variable. Remember, the `return` keyword itself is optional. The complete implementation is shown below.
+    b. This time, have the action return a map with one entry. The key in the entry should be `person` and the value is the `n` variable. Remember, the `return` keyword itself is optional. The complete implementation is shown below.
     
-        def greet(String name) {
-            String n = name ?: 'World'
-            [name:n]
+        def hi() {
+            String n = params.name ?: 'World'
+            [person:n]
         }
         
     When the controller action completes, where will Grails go next?
         
-    c. Create a Groovy Server Page called `greet.gsp` in the `welcome` folder under `grails-app\views`. Give it a simple HTML structure (root element of `<html>`, with a `<head>` section and a `<body>` section). In the head section, add a `meta` tag to tell Grails to use the default SiteMesh layout.
+    c. Create a Groovy Server Page called `hi.gsp` in the `welcome` folder under `grails-app\views`. Give it a simple HTML structure (root element of `<html>`, with a `<head>` section and a `<body>` section). In the head section, add a `meta` tag to tell Grails to use the default SiteMesh layout.
         
-    In the body, add a `<div>` element with the CSS class `body`. Inside the `<div>`, add an `<h2>` element that displays "Hello, ${name}!".  The complete code is shown below.
+    In the body, add a `<div>` element with the CSS class `body`. Inside the `<div>`, add an `<h2>` element that displays "Hello, ${person}!".  The complete code is shown below.
         
         <html>
             <head>
@@ -75,34 +78,65 @@ Exercises
             </head>
             <body>
                 <div class="body">
-                    <h2>Hello, ${name}!</h2>
+                    <h2>Hello, ${person}!</h2>
                 </div>
             </body>
         </html>
         
-    d. Access the `greet` action with a URL, once without a `name` parameter and once with one.
+    d. Access the `hi` action with a URL, once without a `name` parameter and once with one.
     
 6. *Testing the Controller*
 
-    a. Open the `WelcomeControllerTests` class in the `hello\test\unit\com\mycompany\` directory.
+    a. Open the `WelcomeControllerTests` class in the `hello\test\unit\com\mycompany\` directory. As of Grails 2.3, the default testing mechanism uses the Spock plugin, so the test extends `spock.lang.Specification`.
     
-    b. Add a test for the `index` action by invoking the method on the `controller` reference and checking that the re-directed URL is `/welcome/hello`.
+    b. Add tests for the `greet` action both with an without a name. Use Spock's `when/then` construct to do so:
     
-        controller.index()
-        assert response.redirectedUrl == '/welcome/hello'
+        void "greet without name should say Hello, World!"() {
+    		when:
+    		controller.greet()
+    		then:
+    		response.text == '<h2>Hello, World!</h2>'
+        }
+
+    	void "greet with name should say Hello, name"() {
+    		when:
+    		controller.greet('Dolly')
+    		then:
+    		response.text == '<h2>Hello, Dolly!</h2>'
+    	}
     
-    c. Add two tests for the `hello` action, one that adds a `name` parameter to the `params` map and one that doesn't. In each test, invoke the `hello` method on the `controller` and check that the `text` property of the `response` object is the expected value (the string returned by the `render` method).
+    c. Add tests for the `index` action both with an without a name by invoking the method on the `controller` reference and checking that the re-directed URLs are correct. To supply a name, add it to the `params` map before invoking the action.
     
-        params.name = 'Dolly'
-        controller.hello()
-        assert response.text == '<h2>Hello, Dolly!</h2>'
+        void "index without name should redirect to greet without name"() {
+    		when:
+    		controller.index()
+    		then:
+    		response.redirectedUrl == '/welcome/greet'
+    	}
+
+    	void "index with name should redirect to greet with a parameter"() {
+    		when:
+    		params.name = 'Dolly'
+    		controller.index()
+    		then:
+    		response.redirectedUrl == '/welcome/greet?name=Dolly'
+    	}
     
-    d. Add two tests for the `greet` action, again with and without a `name` parameter. This time, when you invoke the `controller.greet()` method, save the result in a variable of type `def` called `model`. In each test, assert that the `model.name` value is the proper string.
+    d. Add two tests for the `hi` action, one with a name and one without. Check that the returned map has the proper `person` key in it.
     
-        def model = controller.greet()
-        assert 'World' == model.name
-        // and 
-        def model = controller.greet('Dolly')
-        assert 'Dolly' == model.name 
+        void "hi without name should return map with person == 'World'"() {
+    		when:
+    		def model = controller.hi()
+    		then:
+    		model.person == 'World'
+    	}
+
+    	void "hi with name should return map with person == name"() {
+    		when:
+    		params.name = 'Dolly'
+    		def model = controller.hi()
+    		then:
+    		model.person == 'Dolly'
+    	}
     
-    e. Execute the `grails test-app unit:` (note the colon after the word `unit`) task and check the resulting output to make sure everything works.
+    e. Execute the `grails test-app com.mycompany.WelcomeController` and check the resulting output to make sure everything works.
