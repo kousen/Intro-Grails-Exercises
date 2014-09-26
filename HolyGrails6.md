@@ -30,7 +30,7 @@ It's probably worth a bookmark.
         void fillInLatLng(Castle c) {
             String encoded = [c.city, c.state].collect {
                 URLEncoder.encode(it, 'UTF-8')
-            }.join(',+')
+            }.join(',')
         }
 
     e. Build a query string using a map and the encoded address
@@ -115,5 +115,26 @@ It's probably worth a bookmark.
 
     a. Restart the application and browse to the list of castles (access the castle controller)
 
-    b. Add other castles, using any city and state you wish. Note that the state is interpreted broadly -- you can use country codes,
-    country names, or anything else that Google understands.
+    b. Add other castles, using any city and state you wish. Note that the state is interpreted broadly -- you can use country codes, country names, or anything else that Google understands.
+
+6. *Disable client setting of lat/lng*
+
+    a. Open the file `grails-app/views/castle/_form.gsp`
+
+    b. Comment out (or delete) the `<div>` sections allowing the client to submit a latitude or longitude
+
+        <%--<div class="fieldcontain ${hasErrors(bean: castleInstance, field: 'latitude', 'error')} required">--%>
+        <%--	<label for="latitude">--%>
+        <%--		<g:message code="castle.latitude.label" default="Latitude" />--%>
+        <%--		<span class="required-indicator">*</span>--%>
+        <%--	</label>--%>
+        <%--	<g:field name="latitude" value="${fieldValue(bean: castleInstance, field: 'latitude')}" required=""/>--%>
+        <%--</div>--%>
+        <%----%>
+        <%--<div class="fieldcontain ${hasErrors(bean: castleInstance, field: 'longitude', 'error')} required">--%>
+        <%--	<label for="longitude">--%>
+        <%--		<g:message code="castle.longitude.label" default="Longitude" />--%>
+        <%--		<span class="required-indicator">*</span>--%>
+        <%--	</label>--%>
+        <%--	<g:field name="longitude" value="${fieldValue(bean: castleInstance, field: 'longitude')}" required=""/>--%>
+        <%--</div>--%>
