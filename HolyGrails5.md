@@ -104,7 +104,7 @@ The Quest for the Holy Grails
 
         def init = { servletContext ->
             // existing quest and tasks
-            Castle camelot = new Castle(name:'Camelot', city:'Los Angeles', state:'CA')
+            Castle camelot = new Castle(name:'Camelot', city:'Boston', state:'MA')
                 .addToKnights(title:'King', name:'Arthur', quest:q)
                 .addToKnights(title:'Sir', name:'Lancelot', quest:q)
                 .addToKnights(title:'Sir', name:'Robin', quest:q)
