@@ -128,7 +128,7 @@ Exercises
 6. *Testing the Controller*
 
     a. Open the `WelcomeControllerTests` class in the
-    `hello\test\unit\com\mycompany\` directory. As of Grails 2.3, the default
+    `hello/test/unit/com/mycompany/` directory. As of Grails 2.3, the default
     testing mechanism uses the Spock plugin, so the test extends
     `spock.lang.Specification`.
 
@@ -136,18 +136,20 @@ Exercises
     `when/then` construct to do so:
 
         void "greet without name should say Hello, World!"() {
-    		when:
-    		controller.greet()
-    		then:
-    		response.text == '<h2>Hello, World!</h2>'
+    		    when:
+    		    controller.greet()
+
+    		    then:
+    		    response.text == '<h2>Hello, World!</h2>'
         }
 
-    	void "greet with name should say Hello, name"() {
-    		when:
-    		controller.greet('Dolly')
-    		then:
-    		response.text == '<h2>Hello, Dolly!</h2>'
-    	}
+    	 void "greet with name should say Hello, name"() {
+            when:
+    		    controller.greet('Dolly')
+
+    		    then:
+    	      response.text == '<h2>Hello, Dolly!</h2>'
+    	  }
 
     c. Add tests for the `index` action both with an without a name by invoking
     the method on the `controller` reference and checking that the re-directed
@@ -155,37 +157,41 @@ Exercises
     invoking the action.
 
         void "index without name should redirect to greet without name"() {
-    		when:
-    		controller.index()
-    		then:
-    		response.redirectedUrl == '/welcome/greet'
-    	}
+    		    when:
+    		    controller.index()
 
-    	void "index with name should redirect to greet with a parameter"() {
-    		when:
-    		params.name = 'Dolly'
-    		controller.index()
-    		then:
-    		response.redirectedUrl == '/welcome/greet?name=Dolly'
-    	}
+    		    then:
+    		    response.redirectedUrl == '/welcome/greet'
+    	  }
+
+    	  void "index with name should redirect to greet with a parameter"() {
+    		    when:
+    		    params.name = 'Dolly'
+    		    controller.index()
+
+    		    then:
+    		    response.redirectedUrl == '/welcome/greet?name=Dolly'
+    	  }
 
     d. Add two tests for the `hi` action, one with a name and one without. Check
     that the returned map has the proper `person` key in it.
 
         void "hi without name should return map with person == 'World'"() {
-    		when:
-    		def model = controller.hi()
-    		then:
-    		model.person == 'World'
-    	}
+    		    when:
+    		    def model = controller.hi()
 
-    	void "hi with name should return map with person == name"() {
-    		when:
-    		params.name = 'Dolly'
-    		def model = controller.hi()
-    		then:
-    		model.person == 'Dolly'
-    	}
+    		    then:
+    		    model.person == 'World'
+    	  }
+
+    	  void "hi with name should return map with person == name"() {
+    		    when:
+    		    params.name = 'Dolly'
+    		    def model = controller.hi()
+
+    		    then:
+    		    model.person == 'Dolly'
+    	  }
 
     e. Execute the `grails test-app com.mycompany.WelcomeController` and check
     the resulting output to make sure everything works.
